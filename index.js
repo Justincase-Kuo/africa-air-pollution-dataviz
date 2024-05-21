@@ -9,15 +9,15 @@ const config = {
    * Replace this with your Mapbox Access Token (**Do this first!**)
    */
   accessToken:
-    'pk.eyJ1IjoianVzdGlua3VvNzc3IiwiYSI6ImNsdzhhcjZmdzJic2YyanBoNDNvNHp0NXcifQ.olPLPZQxsQ_P6h5J5OZREg',
+    'pk.eyJ1IjoianVzdGlua3VvNzc3IiwiYSI6ImNsdzd6aDBsdDI2YWIycWw4bGNpa2Q4dHMifQ._TWZFFiRasCTZkCg6inZaA',
   /**
    * Replace with the url of your map style
    */
-  mapStyle: 'mapbox://styles/justinkuo777/clw89e4mf02ui01qzbm8ad1e1',
+  mapStyle: 'mapbox://styles/justinkuo777/clwau4kbw004l01pn37mv9eic',
   /**
    * The layer within the vector tileset to use for querying
    */
-  sourceLayer: 'UrbAglo_AQdata-3laf8d',
+  sourceLayer: 'UrbAglo_AQdata-a2r4vc',
   /**
    * This sets the title in the sidebar and the <title> tag of the app
    */
@@ -26,7 +26,7 @@ const config = {
    * This sets the description in the sidebar
    */
   description:
-    'This map shows estimated voter turnout as a percentage of total population in 2016, select a county to visualize historical data',
+    'This map shows air pollution trends from 1998 to 2020 in Africa measured on annual average of PM2.5. The heatmap color of circle points reveals the level of PM2.5 (according to WHO air quality guidelines). Select a location to visualize historical data. Zoom in to see the polygon of urban areas (the color of polygon represents population)',
   /**
    * Data fields to chart from the source data
    */
@@ -58,7 +58,7 @@ const config = {
   /**
    * Labels for the X Axis, one for each field
    */
-  labels: ['1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008','2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020'],
+  labels: ['1998', '', '', '', '2002', '', '', '', '2006', '', '','', '2010', '', '', '', '2014', '', '', '', '2018', '', ''],
   /**
    * The name of the data field to pull the place name from for chart labeling ("Total Votes in placeNameField, placeAdminField")
    */
@@ -75,7 +75,7 @@ const config = {
   /**
    * Label for the graph line
    */
-  dataSeriesLabel: 'Air pollution (ground level of PM2.5)',
+  dataSeriesLabel: 'Air pollution (PM2.5)',
   /**
    * Basic implementation of zooming to a clicked feature
    */
@@ -110,7 +110,7 @@ const config = {
   /**
    * The name of your choropleth map layer in studio, used for building a legend
    */
-  studioLayerName: 'choropleth-fill',
+  studioLayerName: 'urbaglo-aqdata-a2r4vc',
 };
 
 /** ******************************************************************************
@@ -141,11 +141,22 @@ const chart = c3.generate({
     x: {
       type: 'category',
       categories: config.labels,
+      tick: {
+        rotate: 45, // Rotate the labels by 45 degrees
+        multiline: false, // Ensure labels are in one line
+      },
+      height: 60 
     },
   },
   size: {
     height: 300,
   },
+  padding: {
+    top: 2,
+    right: 2,
+    bottom: 10,
+    left: 10
+  }
 });
 
 let bbFull;
@@ -329,10 +340,34 @@ function buildLegend() {
   if (config.autoLegend) {
     legend.classList.add('block-ml');
     const style = map.getStyle();
+    console.log('Map style:', style);
     const layer = style.layers.find((i) => i.id === config.studioLayerName);
+    console.log('Layer found:', layer);
+    if (!layer) {
+      console.error(`Layer with ID ${config.studioLayerName} not found in the style.`);
+      return;
+    }
+
     const fill = layer.paint['fill-color'];
+    console.log('Layer paint fill-color:', fill);
+    if (!fill || !Array.isArray(fill)) {
+      console.error('Expected an array for fill-color, but got:', fill);
+      return;
+    }
+
+    // Check if the fill is an "interpolate" expression
+    if (fill[0] !== 'interpolate') {
+      console.error('Expected an interpolate expression for fill-color, but got:', fill);
+      return;
+    }
+
     // Remove the interpolate expression to get the stops
     const stops = fill.slice(3);
+    if (!Array.isArray(stops)) {
+      console.error('Expected stops to be an array, but got:', stops);
+      return;
+    }
+
     stops.forEach((stop, index) => {
       // Every other value is a value, and then a color. Only iterate over the values
       if (index % 2 === 0) {
